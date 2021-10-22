@@ -66,7 +66,7 @@ class GetFileNames:
         for receipt in receipts:
             receipt_data.append({"ID": receipt[0], "receipt": receipt[1]})
 
-        with open("../file_names.json", "w") as file:
+        with open("file_names.json", "w") as file:
             json.dump(receipt_data, file, indent=3)
             file.close()
 
@@ -75,7 +75,7 @@ class GetFileNames:
     def downloadHtml(self, receipt_data):
         ACCESS_KEY_ID = os.getenv('ACCESS_KEY_ID')
         SECRET_ACCESS_KEY = os.getenv('SECRET_ACCESS_KEY')
-        path = '../html_files/'
+        path = 'html_files/'
         s3 = boto3.client('s3', aws_access_key_id=ACCESS_KEY_ID, aws_secret_access_key=SECRET_ACCESS_KEY)
 
         for receipts in receipt_data:
