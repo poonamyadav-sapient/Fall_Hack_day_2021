@@ -1,3 +1,4 @@
 *.env
 *.json
 html_files/
+*.csv

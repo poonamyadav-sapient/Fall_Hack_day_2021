@@ -75,8 +75,13 @@ class GetFileNames:
     def downloadHtml(self, receipt_data):
         ACCESS_KEY_ID = os.getenv('ACCESS_KEY_ID')
         SECRET_ACCESS_KEY = os.getenv('SECRET_ACCESS_KEY')
-        path = 'html_files/'
         s3 = boto3.client('s3', aws_access_key_id=ACCESS_KEY_ID, aws_secret_access_key=SECRET_ACCESS_KEY)
+
+        path = 'html_files/'
+        try:
+            os.mkdir(path)
+        except:
+            pass
 
         for receipts in receipt_data:
             s3.download_file('isc.pricescout.ecomm', receipts['receipt'], path + str(receipts['ID']))

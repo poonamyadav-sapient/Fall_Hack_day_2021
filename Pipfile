@@ -8,6 +8,8 @@ snowflake-connector-python = "*"
 pandas = "*"
 python-dotenv = "*"
 boto3 = "*"
+bs4 = "*"
+
 
 [dev-packages]
 
