@@ -15,7 +15,7 @@ import json
 import boto3
 
 
-class GetFileNames:
+class GetFiles:
     def __init__(self):
         parser = argparse.ArgumentParser()
         args = self.getArgs(parser)
@@ -57,6 +57,7 @@ class GetFileNames:
         where BANNER_KEY = '{}'
         and TRANSACTION_DATETIME > '{}'
         and STATE = 'COMPLETE'
+        ORDER BY RANDOM()
         LIMIT {}
         '''.format(args.banner_key, args.start_date, args.limit)).fetchall()
 
@@ -65,10 +66,6 @@ class GetFileNames:
         receipt_data = []
         for receipt in receipts:
             receipt_data.append({"ID": receipt[0], "receipt": receipt[1]})
-
-        with open("file_names.json", "w") as file:
-            json.dump(receipt_data, file, indent=3)
-            file.close()
 
         self.downloadHtml(receipt_data)
 
@@ -88,5 +85,5 @@ class GetFileNames:
             print("\nDownloaded receipt:", receipts['ID'])
 
 if __name__ == "__main__":
-    GetFileNames()
+    GetFiles()
 

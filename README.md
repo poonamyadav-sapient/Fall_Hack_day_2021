@@ -14,3 +14,6 @@ Create a cred.env file in the same directory and add the following credentials i
 
 `SECRET_ACCESS_KEY=`
 
+To Run the program, execute the following command
+
+`python createDataset.py --banner_key={banner_name} --start_date={start_date} --limit={receipt_limit}`

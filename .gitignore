@@ -2,3 +2,4 @@
 *.json
 html_files/
 *.csv
+.idea
