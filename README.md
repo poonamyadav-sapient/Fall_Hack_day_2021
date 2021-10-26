@@ -4,7 +4,7 @@ Create a virtual environment by running the command pipenv shell.
 
 Run the command `pipenv install` to install all the packages.
 
-Create a cred.env file in the same directory and add the following credentials in it-
+Create a creds.env file in the same directory and add the following credentials in it-
 
 `username=`
 
