@@ -6,12 +6,13 @@ from spacy.language import Language
 import pandas as pd
 import re
 from getReceiptText import GetReceiptText
+from spacy.tokens import DocBin
 
 class createNERdata():
 
     @Language.component('clean_data_matcher')
     def clean_data_matcher(self,entity_label, doc):
-        patterns = {"item_rsd": r'(?:Price Qty Total\s)?([\w\s\-\+\(\)\$]{5,64})\s\$',
+        patterns = {"item_rsd": r'(?:Price Qty Total\s)?([\w\s\-\+\(\#\)\$]{5,64})\s\$',
                     "item_qty_amount": r'(\d{1,3})\s\$(\d{1,3}\.\d{2})'
                     }
         for pattern, expression in patterns.items():
@@ -24,7 +25,7 @@ class createNERdata():
     def item_regex_matcher(doc):
         expressions = {
             "item_qty_amount": re.compile(r"(\d{1,3})\s\$(\d{1,3}\.\d{2})"),
-            "item_rsd": re.compile(r"([\w\s\-\+\(\)\$]{5,64})\s\$\d{1,3}\.\d{2}")
+            "item_rsd": re.compile(r"([\w\s\-\+\(\#\)\$]{5,64})\s\$\d{1,3}\.\d{2}")
         }
         spans = []
         for labels, expression in expressions.items():
@@ -52,6 +53,9 @@ class createNERdata():
         item_price = []
         for i in range(len(item_texts)):
             doc=self.create_item_entity(item_texts[i])
+            db = DocBin()
+            db.add(doc)
+            db.to_disk("/Users/poonam.yadav/Desktop/FallHackday2021_Project/Fall_Hack_day_2021/data/training_data/train.spacy")
             print("************************Receipt id-{0}********************".format(receipt_no[i]))
             print("--------------entities----------------")
             for ent in doc.ents:
