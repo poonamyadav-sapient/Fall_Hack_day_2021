@@ -69,7 +69,7 @@ class CreateDataset(GetFiles):
 
     def uploadToCSV(self, dict):
         df = pd.DataFrame(dict)
-        df.to_csv("dataset.csv", mode="a", index=False, header=False)
+        df.to_csv("dataset.csv", mode="a", index=False)
         print("\n\n\n\nDataset created\n\n")
 
 if __name__ == "__main__":
