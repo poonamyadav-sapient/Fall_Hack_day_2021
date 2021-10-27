@@ -11,7 +11,7 @@ class createNERdata():
 
     @Language.component('clean_data_matcher')
     def clean_data_matcher(self,entity_label, doc):
-        patterns = {"item_rsd": r'[Total]?([\w\s\-\+]{5,64})\s\$',
+        patterns = {"item_rsd": r'(?:Price Qty Total\s)?([\w\s\-\+]{5,64})\s\$',
                     "item_qty_amount": r'(\d{1,3})\s\$(\d{1,3}\.\d{2})'
                     }
         for pattern, expression in patterns.items():
@@ -44,21 +44,24 @@ class createNERdata():
         return doc
 
     def load_entity(self):
-        item_texts, summary_texts = GetReceiptText().getText()
-        print(item_texts)
-        for index,item_text in enumerate(item_texts):
-            doc=self.create_item_entity(item_text)
-            print("************************Receipt id-{0}********************".format(index))
+        receipt_no, item_texts, summary_texts = GetReceiptText().getText()
+        for i in range(len(item_texts)):
+            doc=self.create_item_entity(item_texts[i])
+            print("************************Receipt id-{0}********************".format(receipt_no[i]))
             print("--------------entities----------------")
             for ent in doc.ents:
+                print("entity is {0} and label is {1}".format(ent, ent.label_))
                 if ent.label_ == "item_rsd":
-                    ent = self.clean_data_matcher(ent.label_,ent.text)
-                    print("ent",ent)
-                    print("entity is:item name-{0}".format(ent))
+                    abc = self.clean_data_matcher(ent.label_,ent.text)
+                    print("ent", abc)
+                    print("entity is:item name-{0}".format(abc))
                 else:
-                    print("ent",ent)
-                    ent = self.clean_data_matcher(ent.label_,ent.text)
-                    print("entity is:qty-{0} amount-{1}".format(ent[0], ent[1]))
+                    abc = self.clean_data_matcher(ent.label_,ent.text)
+                    print("ent", abc)
+                    try:
+                        print("entity is:qty-{0} amount-{1}".format(abc[0][0], abc[0][1]))
+                    except:
+                        print("Failed")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ class CreateDataset(GetFiles):
     def getText(self):
         path = 'html_files/'
 
+        receipt_no = []
         item_lines = []
         summary_lines = []
 
@@ -46,10 +47,12 @@ class CreateDataset(GetFiles):
                 counter += 1
 
             print("\nAdding receipt {} to dataset.".format(receipts))
+            receipt_no.append(receipts)
             item_lines.append(' '.join(text[item_start_count:item_end_count]))
             summary_lines.append(' '.join(text[summary_start_count:summary_end_count]))
 
-        dict = {'Item_Text': item_lines,
+        dict = {'Receipt_no': receipt_no,
+                'Item_Text': item_lines,
                 'Summary_Text': summary_lines
                 }
 
