@@ -9,7 +9,9 @@ pandas = "*"
 python-dotenv = "*"
 boto3 = "*"
 bs4 = "*"
-
+spacy = "*"
+setuptools = "*"
+wheel = "*"
 
 [dev-packages]
 
