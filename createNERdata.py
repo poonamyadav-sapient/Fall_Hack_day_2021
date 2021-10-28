@@ -75,13 +75,13 @@ class createNERdata:
 
     def create_entity(self, item_text, item_flag, load):
         if load:
-            nlp = spacy.load("./output/model-best", disable=['ner'])
+            nlp = spacy.load("./output/model-best")
         else:
             nlp = spacy.load("en_core_web_lg", disable=['ner'])
-        if item_flag:
-            nlp.add_pipe('item_regex_matcher')
-        else:
-            nlp.add_pipe('summary_regex_matcher')
+            if item_flag:
+                nlp.add_pipe('item_regex_matcher')
+            else:
+                nlp.add_pipe('summary_regex_matcher')
         doc = nlp(item_text)
         return doc
 
