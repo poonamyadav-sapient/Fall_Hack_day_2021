@@ -1,3 +1,5 @@
+import os
+
 import en_core_web_sm
 import spacy
 from spacy.tokens import span
@@ -7,6 +9,7 @@ import pandas as pd
 import re
 from getReceiptText import GetReceiptText
 from spacy.tokens import DocBin
+import json
 
 class createNERdata():
 
@@ -197,5 +200,68 @@ class createNERdata():
         elif type == 'summary':
             df.to_csv("summary.csv", mode="w", index=False)
 
+
+class ReceiptValidation:
+    def __init__(self):
+        self.receiptData = {}
+        self.getItem()
+        self.getSummary()
+        self.validateBasket()
+        self.setReceiptInfo()
+
+    def getItem(self):
+        df = pd.read_csv('items.csv')
+        for i in range(len(df['Receipt'])):
+            items = {
+                'rsd': df['Item_RSD'][i],
+                'qty': int(df['Item_Qty'][i]),
+                'amount': float(df['Item_Price'][i])
+            }
+            if str(df['Receipt'][i]) not in self.receiptData:
+                self.receiptData[str(df['Receipt'][i])] = {'items': [items]}
+            else:
+                self.receiptData[str(df['Receipt'][i])]['items'].append(items)
+
+    def getSummary(self):
+        df = pd.read_csv('summary.csv')
+        for i in range(len(df['Receipt'])):
+            self.receiptData[str(df['Receipt'][i])]['subtotal'] = float(df['Subtotal'][i])
+            self.receiptData[str(df['Receipt'][i])]['tax'] = float(df['Tax'][i])
+            self.receiptData[str(df['Receipt'][i])]['total'] = float(df['Total'][i])
+
+    def validateBasket(self):
+        for receipts in self.receiptData:
+            receipt = self.receiptData[receipts]
+            items = receipt['items']
+            basket_sum = format(sum(float(item['amount']) for item in items), ".2f")
+            if (
+                    basket_sum == format(receipt['subtotal'], ".2f") or
+                    basket_sum == format(receipt['total'], ".2f") or
+                    basket_sum == format(receipt['subtotal'], ".2f") + format(receipt['total'], ".2f") or
+                    basket_sum == format(receipt['total'], ".2f") - format(receipt['tax'], ".2f")
+            ):
+                receipt['state'] = 'COMPLETE'
+            elif receipt['subtotal'] or receipt['total']:
+                receipt['state'] = 'SUMMARY_PROCESS'
+            else:
+                receipt['state'] = 'ERROR_PARSING'
+
+            self.receiptData[receipts] = receipt
+
+
+    def setReceiptInfo(self):
+        path = 'receipt_json/'
+        try:
+            os.mkdir(path)
+        except:
+            pass
+
+        for receipts in self.receiptData:
+            receipt = self.receiptData[receipts]
+            with open(path + receipts + ".json", "w") as file:
+                json.dump(receipt, file, indent=3)
+                file.close()
+
 if __name__ == "__main__":
-    createNERdata().load_entity()
+    # createNERdata().load_entity()
+    ReceiptValidation()
