@@ -8,8 +8,8 @@ class ReceiptValidation:
         self.receiptData = {}
         self.getItem()
         self.getSummary()
-        self.validateBasket()
-        self.setReceiptInfo()
+        count=self.validateBasket()
+        self.setReceiptInfo(count)
 
     def getItem(self):
         df = pd.read_csv('items.csv')
@@ -32,6 +32,7 @@ class ReceiptValidation:
             self.receiptData[str(df['Receipt'][i])]['total'] = float(df['Total'][i])
 
     def validateBasket(self):
+        count = 0
         for receipts in self.receiptData:
             receipt = self.receiptData[receipts]
             items = receipt['items']
@@ -43,22 +44,25 @@ class ReceiptValidation:
                     basket_sum == format(receipt['total'], ".2f") - format(receipt['tax'], ".2f")
             ):
                 receipt['state'] = 'COMPLETE'
+                count = count+1
             elif receipt['subtotal'] or receipt['total']:
                 receipt['state'] = 'SUMMARY_PROCESS'
             else:
                 receipt['state'] = 'ERROR_PARSING'
 
             self.receiptData[receipts] = receipt
+        return count
 
 
-    def setReceiptInfo(self):
+    def setReceiptInfo(self,count):
         path = 'receipt_json/'
         try:
             os.mkdir(path)
         except:
             pass
-
+        count1=0
         for receipts in self.receiptData:
+            count1 = count1+1
             receipt = self.receiptData[receipts]
             print('{s} Ereceipt:{e} {s}'.format(s='*'*10, e=receipts))
             print('\nItem Data:')
@@ -70,3 +74,4 @@ class ReceiptValidation:
             with open(path + receipts + ".json", "w") as file:
                 json.dump(receipt, file, indent=3)
                 file.close()
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\tTotal Complete state ereceipt:{0}/{1}\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~".format(count, count1))
