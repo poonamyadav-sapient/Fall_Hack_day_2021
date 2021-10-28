@@ -53,6 +53,18 @@ class createNERdata():
     def load_entity(self):
         receipt_no, item_texts, summary_texts = GetReceiptText().getText()
         db = DocBin()
+        item_dict = {
+            'Receipt': [],
+            'Item_RSD': [],
+            'Item_Qty': [],
+            'Item_Price': []
+        }
+        summary_dict = {
+            'Receipt': [],
+            'Subtotal': [],
+            'Tax': [],
+            'Total': []
+        }
         for i in range(len(item_texts)):
             doc=self.create_entity(item_texts[i])
             doc2=self.create_entity(summary_texts[i])
@@ -60,8 +72,22 @@ class createNERdata():
             db.add(doc2)
             print("************************Receipt id-{0}********************".format(receipt_no[i]))
             print("--------------entities----------------")
-            self.itemExtracter(doc, receipt_no[i])
-            self.summaryExtracter(doc2, receipt_no[i])
+            item_data = self.itemExtracter(doc, receipt_no[i])
+            summary_data = self.summaryExtracter(doc2, receipt_no[i])
+
+            item_dict['Receipt'] += item_data['Receipt']
+            item_dict['Item_RSD'] += item_data['Item_RSD']
+            item_dict['Item_Qty'] += item_data['Item_Qty']
+            item_dict['Item_Price'] += item_data['Item_Price']
+
+            summary_dict['Receipt'].append(summary_data['Receipt'][0])
+            summary_dict['Subtotal'].append(summary_data['Subtotal'][0])
+            summary_dict['Tax'].append(summary_data['Tax'][0])
+            summary_dict['Total'].append(summary_data['Total'][0])
+
+        self.uploadToCSV(item_dict, 'item')
+        self.uploadToCSV(summary_dict, 'summary')
+
 
         db.to_disk("/Users/poonam.yadav/Desktop/FallHackday2021_Project/Fall_Hack_day_2021/data/training_data/train.spacy")
 
@@ -95,8 +121,7 @@ class createNERdata():
             'Item_Qty': item_qty,
             'Item_Price': item_price
         }
-        df = pd.DataFrame(data)
-        df.to_csv("items.csv", mode="w", index=False)
+        return data
 
     def summaryExtracter(self, doc, receipt_no):
         receipt_num = []
@@ -143,6 +168,14 @@ class createNERdata():
         }
         df = pd.DataFrame(data)
         df.to_csv("summary.csv", mode="w", index=False)
+        return data
+
+    def uploadToCSV(self, data, type):
+        df = pd.DataFrame(data)
+        if type == 'item':
+            df.to_csv("items.csv", mode="w", index=False)
+        elif type == 'summary':
+            df.to_csv("summary.csv", mode="w", index=False)
 
 if __name__ == "__main__":
     createNERdata().load_entity()
