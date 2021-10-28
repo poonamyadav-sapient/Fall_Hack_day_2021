@@ -1,5 +1,4 @@
 import os
-
 import en_core_web_sm
 import spacy
 from spacy.tokens import span
@@ -7,11 +6,23 @@ from spacy.matcher import Matcher
 from spacy.language import Language
 import pandas as pd
 import re
+from dotenv import load_dotenv
+import argparse
 from getReceiptText import GetReceiptText
 from spacy.tokens import DocBin
 import json
 
-class createNERdata():
+class createNERdata:
+
+    def __init__(self):
+        parser = argparse.ArgumentParser()
+        args = self.getArgs(parser)
+        self.load_entity(args)
+
+    def getArgs(self, parser):
+        parser.add_argument('-load', '--load', default=False , help='To enable the model')
+        args = parser.parse_args()
+        return args
 
     @Language.component('clean_data_matcher')
     def clean_data_matcher(self,entity_label, doc):
@@ -61,8 +72,11 @@ class createNERdata():
         return doc
 
 
-    def create_entity(self,item_text,item_flag):
-        nlp = spacy.load("en_core_web_lg", disable=['ner'])
+    def create_entity(self, item_text, item_flag, load):
+        if load:
+            nlp = spacy.load("./output/model-best", disable=['ner'])
+        else:
+            nlp = spacy.load("en_core_web_lg", disable=['ner'])
         if item_flag:
             nlp.add_pipe('item_regex_matcher')
         else:
@@ -70,7 +84,7 @@ class createNERdata():
         doc = nlp(item_text)
         return doc
 
-    def load_entity(self):
+    def load_entity(self, args):
         receipt_no, item_texts, summary_texts = GetReceiptText().getText()
         item_flag = True
         db = DocBin()
@@ -87,9 +101,9 @@ class createNERdata():
             'Total': []
         }
         for i in range(len(item_texts)):
-            doc=self.create_entity(item_texts[i],item_flag)
+            doc=self.create_entity(item_texts[i],item_flag, args.load)
             item_flag = False
-            doc2=self.create_entity(summary_texts[i],item_flag)
+            doc2=self.create_entity(summary_texts[i],item_flag, args.load)
             item_flag= True
             db.add(doc)
             db.add(doc2)
@@ -112,7 +126,7 @@ class createNERdata():
         self.uploadToCSV(summary_dict, 'summary')
 
 
-        db.to_disk("/data/training_data/train.spacy")
+        db.to_disk("./data/training_data/train.spacy")
 
     def itemExtracter(self, doc, receipt_no):
         receipt_num = []
@@ -263,5 +277,5 @@ class ReceiptValidation:
                 file.close()
 
 if __name__ == "__main__":
-    # createNERdata().load_entity()
-    ReceiptValidation()
+    createNERdata()
+    #ReceiptValidation()
