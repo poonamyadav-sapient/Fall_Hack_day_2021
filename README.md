@@ -23,6 +23,7 @@ Create a creds.env file in the same directory and add the following credentials 
  
  **Step:3** To create NER model run the below command:
  `python -m spacy init fill-config base_config.cfg config.cfg`
+ 
 ` python -m spacy train config.cfg --output ./output --paths.train ./data/training_data/train.spacy --paths.dev ./data/validation_data/train.spacy`
  
  **Step:4** To use the trained model run the below command:
