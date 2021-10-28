@@ -11,6 +11,8 @@ import argparse
 from getReceiptText import GetReceiptText
 from spacy.tokens import DocBin
 import json
+from validation import ReceiptValidation
+
 
 class createNERdata:
 
@@ -71,7 +73,6 @@ class createNERdata:
         doc.ents = list(doc.ents) + spacy.util.filter_spans(spans)
         return doc
 
-
     def create_entity(self, item_text, item_flag, load):
         if load:
             nlp = spacy.load("./output/model-best", disable=['ner'])
@@ -88,6 +89,7 @@ class createNERdata:
         receipt_no, item_texts, summary_texts = GetReceiptText().getText()
         item_flag = True
         db = DocBin()
+
         item_dict = {
             'Receipt': [],
             'Item_RSD': [],
@@ -100,15 +102,15 @@ class createNERdata:
             'Tax': [],
             'Total': []
         }
+
+        print('Extracting Data from Receipts')
         for i in range(len(item_texts)):
-            doc=self.create_entity(item_texts[i],item_flag, args.load)
+            doc = self.create_entity(item_texts[i], item_flag, args.load)
             item_flag = False
-            doc2=self.create_entity(summary_texts[i],item_flag, args.load)
-            item_flag= True
+            doc2 = self.create_entity(summary_texts[i], item_flag, args.load)
+            item_flag = True
             db.add(doc)
             db.add(doc2)
-            print("************************Receipt id-{0}********************".format(receipt_no[i]))
-            print("--------------entities----------------")
             item_data = self.itemExtracter(doc, receipt_no[i])
             summary_data = self.summaryExtracter(doc2, receipt_no[i])
 
@@ -138,19 +140,12 @@ class createNERdata:
             # print("entity is {0} and label is {1}".format(ent, ent.label_))
             if ent.label_ == "item_rsd":
                 abc = self.clean_data_matcher(ent.label_, ent.text)
-                # print("ent", abc)
-                print("\nentity is:item name-{0}".format(abc))
                 receipt_num.append(receipt_no)
                 item_rsd.append(abc[0])
             elif ent.label_ == "item_qty_amount":
                 abc = self.clean_data_matcher(ent.label_, ent.text)
-                # print("ent", abc)
                 item_qty.append(abc[0][0])
                 item_price.append(abc[0][1])
-                try:
-                    print("entity is:qty-{0} amount-{1}".format(abc[0][0], abc[0][1]))
-                except:
-                    print("Failed")
 
         data = {
             'Receipt': receipt_num,
@@ -168,34 +163,15 @@ class createNERdata:
 
         receipt_num.append(receipt_no)
         for ent in doc.ents:
-            # print("entity is {0} and label is {1}".format(ent, ent.label_))
             if ent.label_ == "subtotal":
                 abc = self.clean_data_matcher(ent.label_, ent.text)
-                # print("ent", abc)
-                print("subtotal", abc[0])
                 subtotal.append(abc[0])
-                # try:
-                #     print("entity is:qty-{0} amount-{1}".format(abc[0][0], abc[0][1]))
-                # except:
-                #     print("Failed")
             elif ent.label_ == "tax":
                 abc = self.clean_data_matcher(ent.label_, ent.text)
-                # print("ent", abc)
-                print("tax", abc[0])
                 tax.append(abc[0])
-                # try:
-                #     print("entity is:qty-{0} amount-{1}".format(abc[0][0], abc[0][1]))
-                # except:
-                #     print("Failed")
             elif ent.label_ == "total":
                 abc = self.clean_data_matcher(ent.label_, ent.text)
-                # print("ent", abc)
-                print("total", abc[0])
                 total.append(abc[0])
-                # try:
-                #     print("entity is:qty-{0} amount-{1}".format(abc[0][0], abc[0][1]))
-                # except:
-                #     print("Failed")
 
         data = {
             'Receipt': receipt_num,
@@ -215,67 +191,6 @@ class createNERdata:
             df.to_csv("summary.csv", mode="w", index=False)
 
 
-class ReceiptValidation:
-    def __init__(self):
-        self.receiptData = {}
-        self.getItem()
-        self.getSummary()
-        self.validateBasket()
-        self.setReceiptInfo()
-
-    def getItem(self):
-        df = pd.read_csv('items.csv')
-        for i in range(len(df['Receipt'])):
-            items = {
-                'rsd': df['Item_RSD'][i],
-                'qty': int(df['Item_Qty'][i]),
-                'amount': float(df['Item_Price'][i])
-            }
-            if str(df['Receipt'][i]) not in self.receiptData:
-                self.receiptData[str(df['Receipt'][i])] = {'items': [items]}
-            else:
-                self.receiptData[str(df['Receipt'][i])]['items'].append(items)
-
-    def getSummary(self):
-        df = pd.read_csv('summary.csv')
-        for i in range(len(df['Receipt'])):
-            self.receiptData[str(df['Receipt'][i])]['subtotal'] = float(df['Subtotal'][i])
-            self.receiptData[str(df['Receipt'][i])]['tax'] = float(df['Tax'][i])
-            self.receiptData[str(df['Receipt'][i])]['total'] = float(df['Total'][i])
-
-    def validateBasket(self):
-        for receipts in self.receiptData:
-            receipt = self.receiptData[receipts]
-            items = receipt['items']
-            basket_sum = format(sum(float(item['amount']) for item in items), ".2f")
-            if (
-                    basket_sum == format(receipt['subtotal'], ".2f") or
-                    basket_sum == format(receipt['total'], ".2f") or
-                    basket_sum == format(receipt['subtotal'], ".2f") + format(receipt['total'], ".2f") or
-                    basket_sum == format(receipt['total'], ".2f") - format(receipt['tax'], ".2f")
-            ):
-                receipt['state'] = 'COMPLETE'
-            elif receipt['subtotal'] or receipt['total']:
-                receipt['state'] = 'SUMMARY_PROCESS'
-            else:
-                receipt['state'] = 'ERROR_PARSING'
-
-            self.receiptData[receipts] = receipt
-
-
-    def setReceiptInfo(self):
-        path = 'receipt_json/'
-        try:
-            os.mkdir(path)
-        except:
-            pass
-
-        for receipts in self.receiptData:
-            receipt = self.receiptData[receipts]
-            with open(path + receipts + ".json", "w") as file:
-                json.dump(receipt, file, indent=3)
-                file.close()
-
 if __name__ == "__main__":
     createNERdata()
-    #ReceiptValidation()
+    ReceiptValidation()
