@@ -24,11 +24,9 @@ class createNERdata():
                 # print("result",result)
         return result if result else None
 
-    @Language.component('regex_matcher')
-    def regex_matcher(doc):
+    @Language.component('summary_regex_matcher')
+    def summary_regex_matcher(doc):
         expressions = {
-            "item_rsd": re.compile(r"([\w\s\-\+\(\#\!\&\)\$]{5,64})\s\$\d{1,3}\.\d{2}"),
-            "item_qty_amount": re.compile(r"(\d{1,3})\s\$(\d{1,3}\.\d{2})"),
             "subtotal": re.compile(r"Subtotal\:\s\$(\d{1,3}\.\d{2})"),
             "tax": re.compile(r"Tax\:\s\$(\d{1,3}\.\d{2})"),
             "total": re.compile(r"Total\:\s\$(\d{1,3}\.\d{2})")
@@ -43,15 +41,35 @@ class createNERdata():
         doc.ents = list(doc.ents) + spacy.util.filter_spans(spans)
         return doc
 
+    @Language.component('item_regex_matcher')
+    def item_regex_matcher(doc):
+        expressions = {
+            "item_rsd": re.compile(r"([\w\s\-\+\(\#\!\&\)\$]{5,64})\s\$\d{1,3}\.\d{2}"),
+            "item_qty_amount": re.compile(r"(\d{1,3})\s\$(\d{1,3}\.\d{2})")
+        }
+        spans = []
+        for labels, expression in expressions.items():
+            for match in re.finditer(expression, doc.text):
+                start, end = match.span()
+                entity = doc.char_span(start, end, label=labels, alignment_mode='contract')
+                if entity:
+                    spans.append(entity)
+        doc.ents = list(doc.ents) + spacy.util.filter_spans(spans)
+        return doc
 
-    def create_entity(self,item_text):
+
+    def create_entity(self,item_text,item_flag):
         nlp = spacy.load("en_core_web_lg", disable=['ner'])
-        nlp.add_pipe('regex_matcher')
+        if item_flag:
+            nlp.add_pipe('item_regex_matcher')
+        else:
+            nlp.add_pipe('summary_regex_matcher')
         doc = nlp(item_text)
         return doc
 
     def load_entity(self):
         receipt_no, item_texts, summary_texts = GetReceiptText().getText()
+        item_flag = True
         db = DocBin()
         item_dict = {
             'Receipt': [],
@@ -66,8 +84,10 @@ class createNERdata():
             'Total': []
         }
         for i in range(len(item_texts)):
-            doc=self.create_entity(item_texts[i])
-            doc2=self.create_entity(summary_texts[i])
+            doc=self.create_entity(item_texts[i],item_flag)
+            item_flag = False
+            doc2=self.create_entity(summary_texts[i],item_flag)
+            item_flag= True
             db.add(doc)
             db.add(doc2)
             print("************************Receipt id-{0}********************".format(receipt_no[i]))
@@ -89,7 +109,7 @@ class createNERdata():
         self.uploadToCSV(summary_dict, 'summary')
 
 
-        db.to_disk("/Users/poonam.yadav/Desktop/FallHackday2021_Project/Fall_Hack_day_2021/data/training_data/train.spacy")
+        db.to_disk("/data/training_data/train.spacy")
 
     def itemExtracter(self, doc, receipt_no):
         receipt_num = []

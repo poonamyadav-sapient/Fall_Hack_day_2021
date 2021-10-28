@@ -2,7 +2,7 @@ import spacy
 from getReceiptText import GetReceiptText
 
 class loadNERmodel():
-    nlp=spacy.load('/Users/poonam.yadav/Desktop/FallHackday2021_Project/Fall_Hack_day_2021/output/model-best')
+    nlp=spacy.load('/output/model-best')
     receipt_no, item_texts, summary_texts = GetReceiptText().getText()
     doc1=nlp(item_texts[5])
     doc2 = nlp(summary_texts[5])
