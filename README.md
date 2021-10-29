@@ -38,5 +38,5 @@ Create a creds.env file in the same directory and add the following credentials 
  
  **Step:4** To use the trained model run the below command:
  
- `python createNERdata.py --load` 
+ `python createNERdata.py --load=True` 
  
